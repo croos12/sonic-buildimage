@@ -1,7 +1,97 @@
 use anyhow::{Context, Result};
-use crate::thermal::Thermal;
 use std::fs;
 use std::path::PathBuf;
+
+pub trait Thermal: Send + Sync {
+    fn get_name(&self) -> Result<String>;
+
+    fn get_temperature(&self) -> Result<f32>;
+
+    fn get_high_threshold(&self) -> Result<f32>;
+
+    fn get_low_threshold(&self) -> Result<f32>;
+
+    fn get_high_critical_threshold(&self) -> Result<f32>;
+
+    fn get_low_critical_threshold(&self) -> Result<f32>;
+
+    fn get_minimum_recorded(&self) -> Result<f32>;
+
+    fn get_maximum_recorded(&self) -> Result<f32>;
+
+    fn is_replaceable(&self) -> Result<bool>;
+
+    fn get_position_in_parent(&self) -> Result<usize>;
+}
+
+#[derive(Debug)]
+pub struct TemperatureStatus {
+    pub temperature: Option<f32>,
+    pub over_temperature: bool,
+    pub under_temperature: bool,
+}
+
+impl TemperatureStatus {
+    pub fn new() -> Self {
+        Self {
+            temperature: None,
+            over_temperature: false,
+            under_temperature: false,
+        }
+    }
+
+    pub fn set_temperature(&mut self, name: &str, new_temp: f32) -> bool {
+        const TEMPERATURE_DIFF_THRESHOLD: f32 = 10.0;
+
+        if let Some(old_temp) = self.temperature {
+            let diff = (new_temp - old_temp).abs();
+            if diff > TEMPERATURE_DIFF_THRESHOLD {
+                tracing::warn!(
+                    "Temperature of {} changed too fast: {} -> {}°C",
+                    name,
+                    old_temp,
+                    new_temp
+                );
+            }
+        }
+
+        let changed = self.temperature.map_or(true, |t| (t - new_temp).abs() > 0.1);
+        self.temperature = Some(new_temp);
+        changed
+    }
+
+    pub fn set_over_temperature(&mut self, temperature: f32, threshold: f32) -> bool {
+        const NOT_AVAILABLE: f32 = -999.0;
+
+        if (temperature - NOT_AVAILABLE).abs() < 0.1 || (threshold - NOT_AVAILABLE).abs() < 0.1 {
+            return false;
+        }
+
+        let new_status = temperature > threshold;
+        let changed = self.over_temperature != new_status;
+        self.over_temperature = new_status;
+        changed
+    }
+
+    pub fn set_under_temperature(&mut self, temperature: f32, threshold: f32) -> bool {
+        const NOT_AVAILABLE: f32 = -999.0;
+
+        if (temperature - NOT_AVAILABLE).abs() < 0.1 || (threshold - NOT_AVAILABLE).abs() < 0.1 {
+            return false;
+        }
+
+        let new_status = temperature < threshold;
+        let changed = self.under_temperature != new_status;
+        self.under_temperature = new_status;
+        changed
+    }
+}
+
+impl Default for TemperatureStatus {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 pub struct MlnxThermal {
     name: String,

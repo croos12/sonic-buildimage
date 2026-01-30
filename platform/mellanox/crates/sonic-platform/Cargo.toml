@@ -4,8 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sonic-thermalctld = { path = "../../../../src/sonic-platform-daemons/crates/sonic-thermalctld" }
-
 anyhow = "1"
 thiserror = "1"
 tracing = "0.1"

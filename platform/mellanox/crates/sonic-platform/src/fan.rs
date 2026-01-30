@@ -1,7 +1,200 @@
 use anyhow::{Context, Result};
-use crate::fan::{Fan, FanDirection, LedColor};
+use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU32, Ordering};
+
+static BAD_FAN_COUNT: AtomicU32 = AtomicU32::new(0);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LedColor {
+    Green,
+    Red,
+    Amber,
+    Off,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FanDirection {
+    Intake,
+    Exhaust,
+    NotApplicable,
+}
+
+impl fmt::Display for FanDirection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FanDirection::Intake => write!(f, "intake"),
+            FanDirection::Exhaust => write!(f, "exhaust"),
+            FanDirection::NotApplicable => write!(f, "N/A"),
+        }
+    }
+}
+
+pub trait Fan: Send + Sync {
+    fn get_name(&self) -> Result<String>;
+
+    fn get_presence(&self) -> Result<bool>;
+
+    fn get_status(&self) -> Result<bool>;
+
+    fn get_speed(&self) -> Result<u32>;
+
+    fn get_target_speed(&self) -> Result<u32>;
+
+    fn is_under_speed(&self) -> Result<bool>;
+
+    fn is_over_speed(&self) -> Result<bool>;
+
+    fn get_direction(&self) -> Result<FanDirection>;
+
+    fn get_model(&self) -> Result<String>;
+
+    fn get_serial(&self) -> Result<String>;
+
+    fn is_replaceable(&self) -> Result<bool>;
+
+    fn get_position_in_parent(&self) -> Result<usize>;
+
+    fn set_status_led(&self, color: LedColor) -> Result<()>;
+
+    fn get_status_led(&self) -> Result<LedColor>;
+}
+
+#[derive(Debug)]
+pub struct FanStatus {
+    pub presence: bool,
+    pub under_speed: bool,
+    pub over_speed: bool,
+    pub fault_status: bool,
+}
+
+impl FanStatus {
+    pub fn new() -> Self {
+        Self {
+            presence: true,
+            under_speed: false,
+            over_speed: false,
+            fault_status: true,
+        }
+    }
+
+    pub fn set_presence(&mut self, presence: bool) -> bool {
+        if self.presence != presence {
+            if !presence {
+                BAD_FAN_COUNT.fetch_add(1, Ordering::SeqCst);
+            } else if !self.presence {
+                BAD_FAN_COUNT.fetch_sub(1, Ordering::SeqCst);
+            }
+            self.presence = presence;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn set_under_speed(&mut self, under_speed: bool) -> bool {
+        if self.under_speed != under_speed {
+            self.under_speed = under_speed;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn set_over_speed(&mut self, over_speed: bool) -> bool {
+        if self.over_speed != over_speed {
+            self.over_speed = over_speed;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn set_fault_status(&mut self, fault_status: bool) -> bool {
+        if self.fault_status != fault_status {
+            if !fault_status {
+                BAD_FAN_COUNT.fetch_add(1, Ordering::SeqCst);
+            } else if !self.fault_status {
+                BAD_FAN_COUNT.fetch_sub(1, Ordering::SeqCst);
+            }
+            self.fault_status = fault_status;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn is_ok(&self) -> bool {
+        self.presence && !self.under_speed && !self.over_speed && self.fault_status
+    }
+
+    pub fn get_bad_fan_count() -> u32 {
+        BAD_FAN_COUNT.load(Ordering::SeqCst)
+    }
+
+    pub fn reset_fan_counter() {
+        BAD_FAN_COUNT.store(0, Ordering::SeqCst);
+    }
+}
+
+impl Default for FanStatus {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct FanDrawer {
+    name: String,
+    fans: Vec<Box<dyn Fan>>,
+}
+
+impl FanDrawer {
+    pub fn new(name: String, fans: Vec<Box<dyn Fan>>) -> Self {
+        Self { name, fans }
+    }
+
+    pub fn get_name(&self) -> Result<String> {
+        Ok(self.name.clone())
+    }
+
+    pub fn get_all_fans(&self) -> &[Box<dyn Fan>] {
+        &self.fans
+    }
+
+    pub fn get_presence(&self) -> Result<bool> {
+        Ok(true)
+    }
+
+    pub fn get_status(&self) -> Result<bool> {
+        for fan in &self.fans {
+            if !fan.get_status()? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    pub fn get_model(&self) -> Result<String> {
+        Ok("Unknown".to_string())
+    }
+
+    pub fn get_serial(&self) -> Result<String> {
+        Ok("Unknown".to_string())
+    }
+
+    pub fn is_replaceable(&self) -> Result<bool> {
+        Ok(true)
+    }
+
+    pub fn set_status_led(&self, _color: LedColor) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn get_status_led(&self) -> Result<LedColor> {
+        Ok(LedColor::Green)
+    }
+}
 
 pub struct MlnxFan {
     name: String,

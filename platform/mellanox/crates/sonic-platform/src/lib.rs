@@ -3,8 +3,10 @@ pub mod fan;
 pub mod thermal;
 
 pub use chassis::MlnxChassis;
-pub use fan::MlnxFan;
-pub use thermal::MlnxThermal;
+pub use fan::{
+    MlnxFan, Fan, FanDirection, FanDrawer, FanStatus, LedColor, set_fan_speed
+};
+pub use thermal::{MlnxThermal, Thermal, TemperatureStatus};
 
 use anyhow::Result;
 use std::fs;
