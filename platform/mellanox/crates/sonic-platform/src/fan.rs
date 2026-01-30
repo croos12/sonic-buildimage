@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use sonic_thermalctld::fan::{Fan, FanDirection, LedColor};
+use crate::fan::{Fan, FanDirection, LedColor};
 use std::fs;
 use std::path::{Path, PathBuf};
 

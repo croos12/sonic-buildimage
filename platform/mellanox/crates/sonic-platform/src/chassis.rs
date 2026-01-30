@@ -5,13 +5,13 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn};
 
-use crate::fan::MlnxFan;
-use crate::thermal::MlnxThermal;
+use super::fan::MlnxFan;
+use super::thermal::MlnxThermal;
 
 pub struct MlnxChassis {
-    fans: Vec<Box<dyn sonic_thermalctld::fan::Fan>>,
-    fan_drawers: Vec<sonic_thermalctld::fan::FanDrawer>,
-    thermals: Vec<Box<dyn sonic_thermalctld::thermal::Thermal>>,
+    fans: Vec<Box<dyn crate::fan::Fan>>,
+    fan_drawers: Vec<crate::fan::FanDrawer>,
+    thermals: Vec<Box<dyn crate::thermal::Thermal>>,
 }
 
 impl MlnxChassis {
@@ -116,12 +116,28 @@ impl MlnxChassis {
             debug!("Added thermal sensor at temp{}", temp_idx);
         }
 
+        let num_drawers = (fan_indices.len() + 1) / 2;
+        let mut drawer_fans: Vec<Vec<Box<dyn crate::fan::Fan>>> = Vec::with_capacity(num_drawers);
+        for _ in 0..num_drawers {
+            drawer_fans.push(Vec::new());
+        }
+
         for (i, fan_idx) in fan_indices.iter().enumerate() {
-            let name = format!("Fan {}", fan_idx);
+            let fan_name = format!("fan{}", fan_idx);
             let pwm_idx = pwm_indices.get(i).copied();
-            let fan = MlnxFan::new(name, hwmon_path.to_path_buf(), *fan_idx, pwm_idx);
-            self.fans.push(Box::new(fan));
+            let fan = MlnxFan::new(fan_name, hwmon_path.to_path_buf(), *fan_idx, pwm_idx);
+            drawer_fans[i / 2].push(Box::new(fan));
             debug!("Added fan at fan{} with pwm{:?}", fan_idx, pwm_idx);
+        }
+
+        for (drawer_idx, fans) in drawer_fans.into_iter().enumerate() {
+            if !fans.is_empty() {
+                let drawer_name = format!("drawer{}", drawer_idx);
+                let num_fans = fans.len();
+                let drawer = crate::fan::FanDrawer::new(drawer_name, fans);
+                self.fan_drawers.push(drawer);
+                debug!("Created fan drawer {} with {} fans", drawer_idx, num_fans);
+            }
         }
 
         Ok(())
@@ -146,11 +162,19 @@ impl MlnxChassis {
 
         fan_indices.sort_unstable();
 
+        let mut fans: Vec<Box<dyn crate::fan::Fan>> = Vec::new();
         for fan_idx in fan_indices {
-            let fan_name = format!("{} Fan {}", name, fan_idx);
+            let fan_name = format!("{}_fan{}", name, fan_idx);
             let fan = MlnxFan::new(fan_name, hwmon_path.to_path_buf(), fan_idx, None);
-            self.fans.push(Box::new(fan));
+            fans.push(Box::new(fan));
             debug!("Added fan {} at {}", fan_idx, hwmon_path.display());
+        }
+
+        if !fans.is_empty() {
+            let drawer_name = format!("{}_drawer", name);
+            let drawer = crate::fan::FanDrawer::new(drawer_name, fans);
+            self.fan_drawers.push(drawer);
+            debug!("Created {} fan drawer at {}", name, hwmon_path.display());
         }
 
         Ok(())
@@ -185,24 +209,24 @@ impl MlnxChassis {
         Ok(())
     }
 
-    pub fn get_fans(&self) -> &[Box<dyn sonic_thermalctld::fan::Fan>] {
+    pub fn get_fans(&self) -> &[Box<dyn crate::fan::Fan>] {
         &self.fans
     }
 
-    pub fn get_fan_drawers(&self) -> &[sonic_thermalctld::fan::FanDrawer] {
+    pub fn get_fan_drawers(&self) -> &[crate::fan::FanDrawer] {
         &self.fan_drawers
     }
 
-    pub fn get_thermals(&self) -> &[Box<dyn sonic_thermalctld::thermal::Thermal>] {
+    pub fn get_thermals(&self) -> &[Box<dyn crate::thermal::Thermal>] {
         &self.thermals
     }
 
     pub fn into_components(
         self,
     ) -> (
-        Vec<Box<dyn sonic_thermalctld::fan::Fan>>,
-        Vec<sonic_thermalctld::fan::FanDrawer>,
-        Vec<Box<dyn sonic_thermalctld::thermal::Thermal>>,
+        Vec<Box<dyn crate::fan::Fan>>,
+        Vec<crate::fan::FanDrawer>,
+        Vec<Box<dyn crate::thermal::Thermal>>,
     ) {
         (self.fans, self.fan_drawers, self.thermals)
     }

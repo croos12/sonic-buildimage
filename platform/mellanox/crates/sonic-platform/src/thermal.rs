@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use sonic_thermalctld::thermal::Thermal;
+use crate::thermal::Thermal;
 use std::fs;
 use std::path::PathBuf;
 
