@@ -118,8 +118,8 @@ module sonic-flex_counter {
                 }
             }
 
-            container BULK_SYNC_STAT {
-                /* BULK_SYNC_STAT_COUNTER */
+            container BULK_SYNC {
+                /* BULK_SYNC_COUNTER */
                 leaf FLEX_COUNTER_STATUS {
                     type flex_status;
                 }
