@@ -62,6 +62,10 @@ collect_cache_status() {
 > "$TIMING_LOG"
 > "$BUILD_LOG"
 
+CERT_DIR="/auto/sw_system_project/sx_mlnx_os/mlnx_Secure_Boot/development/sonic_nvos_dev"
+SIGNING_KEY="${CERT_DIR}/nv_sonic_key.pem"
+SIGNING_CERT="${CERT_DIR}/nv_sonic_key_certificate.pem"
+
 log "Starting configure step"
 START_CONFIGURE=$(date +%s)
 
@@ -75,42 +79,48 @@ CONFIGURE_DURATION=$((END_CONFIGURE - START_CONFIGURE))
 
 log "Configure completed in ${CONFIGURE_DURATION}s ($(date -ud @${CONFIGURE_DURATION} +%H:%M:%S))"
 
-log "Starting build step"
-START_BUILD=$(date +%s)
+log "Starting signed bfb build step"
+START_SIGNED_BFB=$(date +%s)
 
-run_make "build bfb" \
+run_make "signed bfb" \
     NOBULLSEYE=1 NOBUSTER=1 SONIC_BUILD_JOBS=8 SONIC_CONFIG_MAKE_JOBS=16 \
     SONIC_DPKG_CACHE_METHOD=cache \
+    SECURE_UPGRADE_MODE="dev" \
+    SECURE_UPGRADE_DEV_SIGNING_KEY="$SIGNING_KEY" \
+    SECURE_UPGRADE_SIGNING_CERT="$SIGNING_CERT" \
     target/sonic-nvidia-bluefield.bfb
 
-END_BUILD=$(date +%s)
-BUILD_DURATION=$((END_BUILD - START_BUILD))
+END_SIGNED_BFB=$(date +%s)
+SIGNED_BFB_DURATION=$((END_SIGNED_BFB - START_SIGNED_BFB))
 
-log "Build bfb completed in ${BUILD_DURATION}s ($(date -ud @${BUILD_DURATION} +%H:%M:%S))"
-collect_cache_status "build bfb"
+log "Signed bfb completed in ${SIGNED_BFB_DURATION}s ($(date -ud @${SIGNED_BFB_DURATION} +%H:%M:%S))"
+collect_cache_status "signed bfb"
 
-log "Starting build bin step"
-START_BUILD_BIN=$(date +%s)
+log "Starting signed bin build step"
+START_SIGNED_BIN=$(date +%s)
 
-run_make "build bin" \
+run_make "signed bin" \
     NOBULLSEYE=1 NOBUSTER=1 SONIC_BUILD_JOBS=8 SONIC_CONFIG_MAKE_JOBS=16 \
     SONIC_DPKG_CACHE_METHOD=cache \
+    SECURE_UPGRADE_MODE="dev" \
+    SECURE_UPGRADE_DEV_SIGNING_KEY="$SIGNING_KEY" \
+    SECURE_UPGRADE_SIGNING_CERT="$SIGNING_CERT" \
     target/sonic-nvidia-bluefield.bin
 
-END_BUILD_BIN=$(date +%s)
-BUILD_BIN_DURATION=$((END_BUILD_BIN - START_BUILD_BIN))
+END_SIGNED_BIN=$(date +%s)
+SIGNED_BIN_DURATION=$((END_SIGNED_BIN - START_SIGNED_BIN))
 
-log "Build bin completed in ${BUILD_BIN_DURATION}s ($(date -ud @${BUILD_BIN_DURATION} +%H:%M:%S))"
-collect_cache_status "build bin"
+log "Signed bin completed in ${SIGNED_BIN_DURATION}s ($(date -ud @${SIGNED_BIN_DURATION} +%H:%M:%S))"
+collect_cache_status "signed bin"
 
 echo ""
 echo "========================================" | tee -a "$TIMING_LOG"
 echo "TIMING SUMMARY" | tee -a "$TIMING_LOG"
 echo "========================================" | tee -a "$TIMING_LOG"
 echo "Configure   : ${CONFIGURE_DURATION}s ($(date -ud @${CONFIGURE_DURATION} +%H:%M:%S))" | tee -a "$TIMING_LOG"
-echo "Build bfb   : ${BUILD_DURATION}s ($(date -ud @${BUILD_DURATION} +%H:%M:%S))" | tee -a "$TIMING_LOG"
-echo "Build bin   : ${BUILD_BIN_DURATION}s ($(date -ud @${BUILD_BIN_DURATION} +%H:%M:%S))" | tee -a "$TIMING_LOG"
-TOTAL=$((CONFIGURE_DURATION + BUILD_DURATION + BUILD_BIN_DURATION))
+echo "Signed bfb  : ${SIGNED_BFB_DURATION}s ($(date -ud @${SIGNED_BFB_DURATION} +%H:%M:%S))" | tee -a "$TIMING_LOG"
+echo "Signed bin  : ${SIGNED_BIN_DURATION}s ($(date -ud @${SIGNED_BIN_DURATION} +%H:%M:%S))" | tee -a "$TIMING_LOG"
+TOTAL=$((CONFIGURE_DURATION + SIGNED_BFB_DURATION + SIGNED_BIN_DURATION))
 echo "Total       : ${TOTAL}s ($(date -ud @${TOTAL} +%H:%M:%S))" | tee -a "$TIMING_LOG"
 echo "========================================" | tee -a "$TIMING_LOG"
 
