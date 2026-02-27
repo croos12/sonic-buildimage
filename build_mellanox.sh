@@ -36,8 +36,12 @@ BUILD_DURATION=$((END_BUILD - START_BUILD))
 
 log "Unsigned build completed in ${BUILD_DURATION}s ($(date -ud @${BUILD_DURATION} +%H:%M:%S))"
 
-log "Removing unsigned bin before signed build"
+log "Cleaning unsigned artifacts before signed build"
 rm -f target/sonic-mellanox.bin
+rm -f target/debs/trixie/linux-image-*-unsigned_*.deb
+rm -f target/debs/trixie/linux-headers-*.deb
+rm -f target/debs/trixie/linux-kbuild-*.deb
+rm -f target/sonic-mellanox.bin__mellanox__rfs.squashfs
 
 log "Starting signed build step"
 START_SIGNED=$(date +%s)
