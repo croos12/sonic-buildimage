@@ -38,6 +38,7 @@ START_BUILD=$(date +%s)
 run_make "unsigned bin" \
     NOBULLSEYE=1 NOBUSTER=1 SONIC_BUILD_JOBS=8 SONIC_CONFIG_MAKE_JOBS=16 \
     SONIC_DPKG_CACHE_METHOD=cache \
+    SONIC_DPKG_CACHE_SOURCE=/builds2/croos/cache \
     target/sonic-mellanox.bin
 
 END_BUILD=$(date +%s)
@@ -54,6 +55,7 @@ START_RPC=$(date +%s)
 run_make "RPC bin" \
     NOBULLSEYE=1 NOBUSTER=1 SONIC_BUILD_JOBS=8 SONIC_CONFIG_MAKE_JOBS=16 \
     SONIC_DPKG_CACHE_METHOD=cache \
+    SONIC_DPKG_CACHE_SOURCE=/builds2/croos/cache \
     ENABLE_SYNCD_RPC=y \
     target/sonic-mellanox.bin
 

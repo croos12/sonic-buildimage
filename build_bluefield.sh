@@ -39,7 +39,7 @@ START_BUILD=$(date +%s)
 run_make "build bfb" \
     NOBULLSEYE=1 NOBUSTER=1 SONIC_BUILD_JOBS=8 SONIC_CONFIG_MAKE_JOBS=16 \
     SONIC_DPKG_CACHE_METHOD=cache \
-    SONIC_DPKG_CACHE_SOURCE=/builds2/croos \
+    SONIC_DPKG_CACHE_SOURCE=/builds2/croos/cache \
     target/sonic-nvidia-bluefield.bfb
 
 END_BUILD=$(date +%s)
@@ -53,7 +53,7 @@ START_BUILD_BIN=$(date +%s)
 run_make "build bin" \
     NOBULLSEYE=1 NOBUSTER=1 SONIC_BUILD_JOBS=8 SONIC_CONFIG_MAKE_JOBS=16 \
     SONIC_DPKG_CACHE_METHOD=cache \
-    SONIC_DPKG_CACHE_SOURCE=/builds2/croos \
+    SONIC_DPKG_CACHE_SOURCE=/builds2/croos/cache \
     target/sonic-nvidia-bluefield.bin
 
 END_BUILD_BIN=$(date +%s)
