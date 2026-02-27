@@ -1,14 +1,13 @@
 #!/bin/bash
 
-set -e
+set -eo pipefail
 
-TIMING_LOG="build_timing.log"
 BUILD_LOG="bluefield_logs.txt"
 
 log() {
-    echo "========================================" | tee -a "$TIMING_LOG"
-    echo "$1" | tee -a "$TIMING_LOG"
-    echo "========================================" | tee -a "$TIMING_LOG"
+    echo "========================================" | tee -a "$BUILD_LOG"
+    echo "$1" | tee -a "$BUILD_LOG"
+    echo "========================================" | tee -a "$BUILD_LOG"
 }
 
 run_make() {
@@ -17,49 +16,8 @@ run_make() {
     echo "" >> "$BUILD_LOG"
     echo "######## $label ########" >> "$BUILD_LOG"
     make "$@" 2>&1 | tee -a "$BUILD_LOG"
-    return "${PIPESTATUS[0]}"
 }
 
-collect_cache_status() {
-    local label="$1"
-    echo "" >> "$BUILD_LOG"
-    echo "######## CACHE STATUS after: $label ########" >> "$BUILD_LOG"
-
-    local loaded=0 skipped=0 saved=0
-    local loaded_list="" skipped_list=""
-
-    while IFS= read -r logfile; do
-        local base
-        base=$(basename "$logfile" .log)
-        if grep -q '\[ CACHE::LOADED \]' "$logfile" 2>/dev/null; then
-            loaded=$((loaded + 1))
-            loaded_list+="  $base"$'\n'
-        fi
-        if grep -q '\[ CACHE::SKIPPED \]' "$logfile" 2>/dev/null; then
-            skipped=$((skipped + 1))
-            skipped_list+="  $base"$'\n'
-        fi
-        if grep -q '\[ CACHE::SAVED \]' "$logfile" 2>/dev/null; then
-            saved=$((saved + 1))
-        fi
-    done < <(find target -name '*.log' -newer "$TIMING_LOG" 2>/dev/null)
-
-    {
-        echo "  Cached (LOADED) : $loaded"
-        echo "  Built  (SKIPPED): $skipped"
-        echo "  Saved to cache  : $saved"
-        if [ -n "$loaded_list" ]; then
-            echo "  --- Cached packages ---"
-            echo "$loaded_list"
-        fi
-        if [ -n "$skipped_list" ]; then
-            echo "  --- Built packages ---"
-            echo "$skipped_list"
-        fi
-    } | tee -a "$BUILD_LOG" | tee -a "$TIMING_LOG"
-}
-
-> "$TIMING_LOG"
 > "$BUILD_LOG"
 
 log "Starting configure step"
@@ -81,13 +39,13 @@ START_BUILD=$(date +%s)
 run_make "build bfb" \
     NOBULLSEYE=1 NOBUSTER=1 SONIC_BUILD_JOBS=8 SONIC_CONFIG_MAKE_JOBS=16 \
     SONIC_DPKG_CACHE_METHOD=cache \
+    SONIC_DPKG_CACHE_SOURCE=/builds2/croos \
     target/sonic-nvidia-bluefield.bfb
 
 END_BUILD=$(date +%s)
 BUILD_DURATION=$((END_BUILD - START_BUILD))
 
 log "Build bfb completed in ${BUILD_DURATION}s ($(date -ud @${BUILD_DURATION} +%H:%M:%S))"
-collect_cache_status "build bfb"
 
 log "Starting build bin step"
 START_BUILD_BIN=$(date +%s)
@@ -95,68 +53,28 @@ START_BUILD_BIN=$(date +%s)
 run_make "build bin" \
     NOBULLSEYE=1 NOBUSTER=1 SONIC_BUILD_JOBS=8 SONIC_CONFIG_MAKE_JOBS=16 \
     SONIC_DPKG_CACHE_METHOD=cache \
+    SONIC_DPKG_CACHE_SOURCE=/builds2/croos \
     target/sonic-nvidia-bluefield.bin
 
 END_BUILD_BIN=$(date +%s)
 BUILD_BIN_DURATION=$((END_BUILD_BIN - START_BUILD_BIN))
 
 log "Build bin completed in ${BUILD_BIN_DURATION}s ($(date -ud @${BUILD_BIN_DURATION} +%H:%M:%S))"
-collect_cache_status "build bin"
 
 echo ""
-echo "========================================" | tee -a "$TIMING_LOG"
-echo "TIMING SUMMARY" | tee -a "$TIMING_LOG"
-echo "========================================" | tee -a "$TIMING_LOG"
-echo "Configure   : ${CONFIGURE_DURATION}s ($(date -ud @${CONFIGURE_DURATION} +%H:%M:%S))" | tee -a "$TIMING_LOG"
-echo "Build bfb   : ${BUILD_DURATION}s ($(date -ud @${BUILD_DURATION} +%H:%M:%S))" | tee -a "$TIMING_LOG"
-echo "Build bin   : ${BUILD_BIN_DURATION}s ($(date -ud @${BUILD_BIN_DURATION} +%H:%M:%S))" | tee -a "$TIMING_LOG"
-TOTAL=$((CONFIGURE_DURATION + BUILD_DURATION + BUILD_BIN_DURATION))
-echo "Total       : ${TOTAL}s ($(date -ud @${TOTAL} +%H:%M:%S))" | tee -a "$TIMING_LOG"
-echo "========================================" | tee -a "$TIMING_LOG"
+echo "========================================" | tee -a "$BUILD_LOG"
+echo "TIMING SUMMARY" | tee -a "$BUILD_LOG"
+echo "========================================" | tee -a "$BUILD_LOG"
+echo "Configure   : ${CONFIGURE_DURATION:-0}s ($(date -ud @${CONFIGURE_DURATION:-0} +%H:%M:%S))" | tee -a "$BUILD_LOG"
+echo "Build bfb   : ${BUILD_DURATION:-0}s ($(date -ud @${BUILD_DURATION:-0} +%H:%M:%S))" | tee -a "$BUILD_LOG"
+echo "Build bin   : ${BUILD_BIN_DURATION:-0}s ($(date -ud @${BUILD_BIN_DURATION:-0} +%H:%M:%S))" | tee -a "$BUILD_LOG"
+TOTAL=$(( ${CONFIGURE_DURATION:-0} + ${BUILD_DURATION:-0} + ${BUILD_BIN_DURATION:-0} ))
+echo "Total       : ${TOTAL}s ($(date -ud @${TOTAL} +%H:%M:%S))" | tee -a "$BUILD_LOG"
+echo "========================================" | tee -a "$BUILD_LOG"
 
 echo ""
-echo "========================================" | tee -a "$TIMING_LOG"
-echo "OVERALL CACHE SUMMARY" | tee -a "$TIMING_LOG"
-echo "========================================" | tee -a "$TIMING_LOG"
-
-total_loaded=0
-total_skipped=0
-total_saved=0
-all_loaded=""
-all_skipped=""
-
-while IFS= read -r logfile; do
-    base=$(basename "$logfile" .log)
-    if grep -q '\[ CACHE::LOADED \]' "$logfile" 2>/dev/null; then
-        total_loaded=$((total_loaded + 1))
-        all_loaded+="  $base"$'\n'
-    fi
-    if grep -q '\[ CACHE::SKIPPED \]' "$logfile" 2>/dev/null; then
-        total_skipped=$((total_skipped + 1))
-        all_skipped+="  $base"$'\n'
-    fi
-    if grep -q '\[ CACHE::SAVED \]' "$logfile" 2>/dev/null; then
-        total_saved=$((total_saved + 1))
-    fi
-done < <(find target -name '*.log' 2>/dev/null)
-
-{
-    echo "Packages loaded from cache : $total_loaded"
-    echo "Packages built from source : $total_skipped"
-    echo "Packages saved to cache    : $total_saved"
-    if [ -n "$all_loaded" ]; then
-        echo ""
-        echo "--- Cached packages ---"
-        echo "$all_loaded"
-    fi
-    if [ -n "$all_skipped" ]; then
-        echo ""
-        echo "--- Built packages ---"
-        echo "$all_skipped"
-    fi
-} | tee -a "$TIMING_LOG" | tee -a "$BUILD_LOG"
-
-echo "========================================" | tee -a "$TIMING_LOG"
-echo ""
-echo "Full build log: $BUILD_LOG"
-echo "Timing + cache summary: $TIMING_LOG"
+echo "CACHE SUMMARY" | tee -a "$BUILD_LOG"
+echo "========================================" | tee -a "$BUILD_LOG"
+find target -name '*.log' -exec grep -l 'CACHE::LOADED' {} + 2>/dev/null | xargs -n1 basename | sed 's/\.log$//' | sort -u | tee -a "$BUILD_LOG"
+echo "Total cached: $(find target -name '*.log' -exec grep -l 'CACHE::LOADED' {} + 2>/dev/null | wc -l)" | tee -a "$BUILD_LOG"
+echo "========================================" | tee -a "$BUILD_LOG"
