@@ -1,6 +1,11 @@
 # swss package
 
+ifeq ($(ENABLE_ASAN), y)
+SWSS = swss-asan_1.0.0_$(CONFIGURED_ARCH).deb
+$(SWSS)_DPKG_DEB_NAME = swss_1.0.0_$(CONFIGURED_ARCH).deb
+else
 SWSS = swss_1.0.0_$(CONFIGURED_ARCH).deb
+endif
 $(SWSS)_SRC_PATH = $(SRC_PATH)/sonic-swss
 $(SWSS)_DEPENDS += $(LIBSAIREDIS_DEV) $(LIBSAIMETADATA_DEV) $(LIBTEAM_DEV) \
     $(LIBTEAMDCTL) $(LIBTEAM_UTILS) $(LIBSWSSCOMMON_DEV) \
@@ -13,7 +18,12 @@ $(SWSS)_RDEPENDS += $(LIBSAIREDIS) $(LIBSAIMETADATA) $(LIBTEAM) \
     $(PROTOBUF) $(PROTOBUF_LITE) $(PYTHON3_PROTOBUF) $(LIB_SONIC_DASH_API)
 SONIC_DPKG_DEBS += $(SWSS)
 
+ifeq ($(ENABLE_ASAN), y)
+SWSS_DBG = swss-dbg-asan_1.0.0_$(CONFIGURED_ARCH).deb
+$(SWSS_DBG)_DPKG_DEB_NAME = swss-dbg_1.0.0_$(CONFIGURED_ARCH).deb
+else
 SWSS_DBG = swss-dbg_1.0.0_$(CONFIGURED_ARCH).deb
+endif
 $(SWSS_DBG)_DEPENDS += $(SWSS)
 $(SWSS_DBG)_RDEPENDS += $(SWSS)
 $(eval $(call add_derived_package,$(SWSS),$(SWSS_DBG)))
