@@ -6,12 +6,16 @@ BUILD_LOG="mellanox_logs.txt"
 COMMON_MAKE_OPTS="NOBULLSEYE=1 NOBUSTER=1 SONIC_BUILD_JOBS=8 SONIC_CONFIG_MAKE_JOBS=16"
 CACHE_OPTS="SONIC_DPKG_CACHE_METHOD=cache SONIC_DPKG_CACHE_SOURCE=/builds2/croos/cache"
 
+CERT_DIR="/auto/sw_system_project/sx_mlnx_os/mlnx_Secure_Boot/development/sonic_nvos_dev"
+SIGNING_OPTS="SECURE_UPGRADE_MODE=dev SECURE_UPGRADE_DEV_SIGNING_KEY=${CERT_DIR}/nv_sonic_key.pem SECURE_UPGRADE_SIGNING_CERT=${CERT_DIR}/nv_sonic_key_certificate.pem"
+
 usage() {
     echo "Usage: $0 <steps>"
     echo ""
     echo "Steps are letters executed in the order given:"
     echo "  c  Configure"
     echo "  b  Unsigned bin build"
+    echo "  s  Signed bin build (cleans kernel debs/cache first)"
     echo "  r  RPC bin build"
     echo "  a  ASAN bin build"
     echo ""
@@ -19,6 +23,8 @@ usage() {
     echo "  $0 cb      # Configure then build"
     echo "  $0 cbr     # Configure, build, RPC"
     echo "  $0 cbra    # Configure, build, RPC, ASAN"
+    echo "  $0 cs      # Configure, signed build"
+    echo "  $0 csr     # Configure, signed build, RPC"
     echo "  $0 a       # ASAN only (assumes already configured)"
     echo "  $0 br      # Build then RPC (assumes already configured)"
     exit 1
@@ -28,9 +34,9 @@ usage() {
 
 STEPS="$1"
 
-if [[ "$STEPS" =~ [^cbra] ]]; then
+if [[ "$STEPS" =~ [^cbsra] ]]; then
     echo "Error: invalid step character in '$STEPS'"
-    echo "Valid steps: c (configure), b (bin), r (rpc), a (asan)"
+    echo "Valid steps: c (configure), b (bin), s (signed bin), r (rpc), a (asan)"
     exit 1
 fi
 
@@ -46,6 +52,28 @@ run_make() {
     echo "" >> "$BUILD_LOG"
     echo "######## $label ########" >> "$BUILD_LOG"
     make "$@" 2>&1 | tee -a "$BUILD_LOG"
+}
+
+clean_kernel_artifacts() {
+    log "Cleaning kernel debs and cache entries for fresh signed build"
+
+    local count=0
+    for dir in target/debs/*/; do
+        for f in "${dir}"linux-headers-* "${dir}"linux-image-* "${dir}"linux-kbuild-*; do
+            [ -e "$f" ] && rm -f "$f" && count=$((count + 1))
+        done
+    done
+
+    for f in target/cache/linux-headers-*.tgz target/cache/linux-image-*.tgz target/cache/linux-kbuild-*.tgz; do
+        [ -e "$f" ] && rm -f "$f" && count=$((count + 1))
+    done
+
+    local cache_src="${SONIC_DPKG_CACHE_SOURCE:-/builds2/croos/cache}"
+    for f in "${cache_src}"/linux-headers-*.tgz "${cache_src}"/linux-image-*.tgz "${cache_src}"/linux-kbuild-*.tgz; do
+        [ -e "$f" ] && rm -f "$f" && count=$((count + 1))
+    done
+
+    echo "Removed $count kernel-related file(s)" | tee -a "$BUILD_LOG"
 }
 
 > "$BUILD_LOG"
@@ -79,8 +107,24 @@ for (( i=0; i<${#STEPS}; i++ )); do
             log "Unsigned build completed in ${BUILD_DURATION}s ($(date -ud @${BUILD_DURATION} +%H:%M:%S))"
             ;;
 
+        s)
+            clean_kernel_artifacts
+
+            log "Starting signed build step"
+            START_SIGNED=$(date +%s)
+
+            run_make "signed bin" \
+                $COMMON_MAKE_OPTS $CACHE_OPTS \
+                $SIGNING_OPTS \
+                target/sonic-mellanox.bin
+
+            END_SIGNED=$(date +%s)
+            SIGNED_DURATION=$((END_SIGNED - START_SIGNED))
+            log "Signed build completed in ${SIGNED_DURATION}s ($(date -ud @${SIGNED_DURATION} +%H:%M:%S))"
+            ;;
+
         r)
-            log "Removing unsigned bin before RPC build"
+            log "Removing bin before RPC build"
             rm -f target/sonic-mellanox.bin
 
             log "Starting RPC build step"
@@ -121,9 +165,10 @@ echo "TIMING SUMMARY" | tee -a "$BUILD_LOG"
 echo "========================================" | tee -a "$BUILD_LOG"
 [[ -n "$CONFIGURE_DURATION" ]] && echo "Configure    : ${CONFIGURE_DURATION}s ($(date -ud @${CONFIGURE_DURATION} +%H:%M:%S))" | tee -a "$BUILD_LOG"
 [[ -n "$BUILD_DURATION" ]]     && echo "Unsigned bin : ${BUILD_DURATION}s ($(date -ud @${BUILD_DURATION} +%H:%M:%S))" | tee -a "$BUILD_LOG"
+[[ -n "$SIGNED_DURATION" ]]    && echo "Signed bin   : ${SIGNED_DURATION}s ($(date -ud @${SIGNED_DURATION} +%H:%M:%S))" | tee -a "$BUILD_LOG"
 [[ -n "$RPC_DURATION" ]]       && echo "RPC bin      : ${RPC_DURATION}s ($(date -ud @${RPC_DURATION} +%H:%M:%S))" | tee -a "$BUILD_LOG"
 [[ -n "$ASAN_DURATION" ]]      && echo "ASAN bin     : ${ASAN_DURATION}s ($(date -ud @${ASAN_DURATION} +%H:%M:%S))" | tee -a "$BUILD_LOG"
-TOTAL=$(( ${CONFIGURE_DURATION:-0} + ${BUILD_DURATION:-0} + ${RPC_DURATION:-0} + ${ASAN_DURATION:-0} ))
+TOTAL=$(( ${CONFIGURE_DURATION:-0} + ${BUILD_DURATION:-0} + ${SIGNED_DURATION:-0} + ${RPC_DURATION:-0} + ${ASAN_DURATION:-0} ))
 echo "Total        : ${TOTAL}s ($(date -ud @${TOTAL} +%H:%M:%S))" | tee -a "$BUILD_LOG"
 echo "========================================" | tee -a "$BUILD_LOG"
 
