@@ -76,6 +76,46 @@ clean_kernel_artifacts() {
     echo "Removed $count kernel-related file(s)" | tee -a "$BUILD_LOG"
 }
 
+clean_system_override_stamps() {
+    local count=0
+    for f in target/debs/bookworm/libnl-*-install; do
+        [ -e "$f" ] && rm -f "$f" && count=$((count + 1))
+    done
+    if [ "$count" -gt 0 ]; then
+        echo "Removed $count stale libnl install stamp(s)" | tee -a "$BUILD_LOG"
+    fi
+}
+
+stamp_non_kernel_installs() {
+    log "Creating install stamps for existing non-kernel packages"
+
+    local ref_file count=0
+    ref_file=$(find target/python-wheels -name "*.whl" -print -quit 2>/dev/null)
+
+    if [ -n "$ref_file" ] && [ .platform -nt "$ref_file" ]; then
+        touch -r "$ref_file" .platform
+        echo "Reset .platform timestamp to match existing build artifacts" | tee -a "$BUILD_LOG"
+    fi
+
+    for f in target/debs/bookworm/*.deb; do
+        [ -f "$f" ] || continue
+        case "$(basename "$f")" in
+            linux-headers-*|linux-image-*|linux-kbuild-*) continue ;;
+            libnl-*) continue ;;
+        esac
+        touch -r "$f" "${f}-install"
+        count=$((count + 1))
+    done
+
+    for f in target/python-wheels/bookworm/*.whl; do
+        [ -f "$f" ] || continue
+        touch -r "$f" "${f}-install"
+        count=$((count + 1))
+    done
+
+    echo "Stamped $count install markers" | tee -a "$BUILD_LOG"
+}
+
 > "$BUILD_LOG"
 
 for (( i=0; i<${#STEPS}; i++ )); do
@@ -85,9 +125,20 @@ for (( i=0; i<${#STEPS}; i++ )); do
             log "Starting configure step"
             START_CONFIGURE=$(date +%s)
 
+            PLATFORM_REF=""
+            if [ -f .platform ] && [ "$(cat .platform)" = "mellanox" ]; then
+                PLATFORM_REF=$(mktemp)
+                touch -r .platform "$PLATFORM_REF"
+            fi
+
             run_make "configure" \
                 $COMMON_MAKE_OPTS PLATFORM=mellanox \
                 configure
+
+            if [ -n "$PLATFORM_REF" ] && [ -f "$PLATFORM_REF" ]; then
+                touch -r "$PLATFORM_REF" .platform
+                rm -f "$PLATFORM_REF"
+            fi
 
             END_CONFIGURE=$(date +%s)
             CONFIGURE_DURATION=$((END_CONFIGURE - START_CONFIGURE))
@@ -95,6 +146,7 @@ for (( i=0; i<${#STEPS}; i++ )); do
             ;;
 
         b)
+            clean_system_override_stamps
             log "Starting unsigned build step"
             START_BUILD=$(date +%s)
 
@@ -109,6 +161,11 @@ for (( i=0; i<${#STEPS}; i++ )); do
 
         s)
             clean_kernel_artifacts
+            stamp_non_kernel_installs
+            clean_system_override_stamps
+
+            log "Removing bin before signed build"
+            rm -f target/sonic-mellanox.bin
 
             log "Starting signed build step"
             START_SIGNED=$(date +%s)
@@ -124,6 +181,7 @@ for (( i=0; i<${#STEPS}; i++ )); do
             ;;
 
         r)
+            clean_system_override_stamps
             log "Removing bin before RPC build"
             rm -f target/sonic-mellanox.bin
 
@@ -141,6 +199,7 @@ for (( i=0; i<${#STEPS}; i++ )); do
             ;;
 
         a)
+            clean_system_override_stamps
             log "Removing bin before ASAN build"
             rm -f target/sonic-mellanox.bin
 
