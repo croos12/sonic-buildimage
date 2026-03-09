@@ -4,6 +4,7 @@ ifneq ($(CONFIGURED_PLATFORM),vs)
 
 ifeq ($(ENABLE_ASAN), y)
 SYNCD = syncd-asan_1.0.0_$(CONFIGURED_ARCH).deb
+$(SYNCD)_DPKG_DEB_NAME = syncd_1.0.0_$(CONFIGURED_ARCH).deb
 else
 SYNCD = syncd_1.0.0_$(CONFIGURED_ARCH).deb
 endif
@@ -30,6 +31,7 @@ endif
 
 ifeq ($(ENABLE_ASAN), y)
 SYNCD_DBG = syncd-asan-dbgsym_1.0.0_$(CONFIGURED_ARCH).deb
+$(SYNCD_DBG)_DPKG_DEB_NAME = syncd-dbgsym_1.0.0_$(CONFIGURED_ARCH).deb
 else
 SYNCD_DBG = syncd-dbgsym_1.0.0_$(CONFIGURED_ARCH).deb
 endif

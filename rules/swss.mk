@@ -2,6 +2,7 @@
 
 ifeq ($(ENABLE_ASAN), y)
 SWSS = swss-asan_1.0.0_$(CONFIGURED_ARCH).deb
+$(SWSS)_DPKG_DEB_NAME = swss_1.0.0_$(CONFIGURED_ARCH).deb
 else
 SWSS = swss_1.0.0_$(CONFIGURED_ARCH).deb
 endif
@@ -21,7 +22,8 @@ $(SWSS)_RDEPENDS += $(LIBSAIREDIS) $(LIBSAIMETADATA) $(LIBTEAM) \
 SONIC_DPKG_DEBS += $(SWSS)
 
 ifeq ($(ENABLE_ASAN), y)
-SWSS_DBG = swss-dbg-asan_1.0.0_$(CONFIGURED_ARCH).deb
+SWSS_DBG = swss-asan-dbg_1.0.0_$(CONFIGURED_ARCH).deb
+$(SWSS_DBG)_DPKG_DEB_NAME = swss-dbg_1.0.0_$(CONFIGURED_ARCH).deb
 else
 SWSS_DBG = swss-dbg_1.0.0_$(CONFIGURED_ARCH).deb
 endif
