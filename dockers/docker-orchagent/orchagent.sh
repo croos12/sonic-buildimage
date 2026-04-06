@@ -25,7 +25,7 @@ if [[ x"${LOCALHOST_SWITCHTYPE}" == x"chassis-packet" ]]; then
     # during route-churn
     ORCHAGENT_ARGS+="-b 128 "
 elif [[ x"$LOCALHOST_SWITCHTYPE" == x"dpu" ]]; then
-    # To handle high volume of objects in DPU (125k+ DASH entries)
+    # To handle high volume of objects in DPU
     ORCHAGENT_ARGS+="-b 131072 "
 else
     # Set orchagent pop batch size to 1024
