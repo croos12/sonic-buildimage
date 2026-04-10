@@ -884,7 +884,7 @@ $(addprefix $(DEBS_PATH)/, $(SONIC_DPKG_DEBS)) : $(DEBS_PATH)/% : .platform $$(a
 		# Clean up
 		if [ -f $($*_SRC_PATH).patch/series ]; then pushd $($*_SRC_PATH) && quilt pop -a -f; [ -d .pc ] && rm -rf .pc; popd; fi
 		# Take built package(s)
-		mv -f $(addprefix $($*_SRC_PATH)/../, $* $($*_DERIVED_DEBS) $($*_EXTRA_DEBS)) $(DEBS_PATH) $(LOG)
+		$(foreach deb,$* $($*_DERIVED_DEBS) $($*_EXTRA_DEBS),mv -f $($*_SRC_PATH)/../$(or $($(deb)_DPKG_DEB_NAME),$(deb)) $(DEBS_PATH)/$(deb) $(LOG) ;)
 
 		# Save the target deb into DPKG cache
 		$(call SAVE_CACHE,$*,$@)
@@ -1251,6 +1251,7 @@ $(addprefix $(TARGET_PATH)/, $(DOCKER_IMAGES)) : $(TARGET_PATH)/%.gz : .platform
 		# Export variables for j2. Use path for unique variable names, e.g. docker_orchagent_debs
 		export include_system_eventd="$(INCLUDE_SYSTEM_EVENTD)"
 		export build_reduce_image_size="$(BUILD_REDUCE_IMAGE_SIZE)"
+		export enable_asan="$(ENABLE_ASAN)"
 		export sonic_asic_platform="$(patsubst %-$(CONFIGURED_ARCH),%,$(CONFIGURED_PLATFORM))"
 		$(eval export $(subst -,_,$(notdir $($*.gz_PATH)))_debs=$(shell printf "$(subst $(SPACE),\n,$(call expand,$($*.gz_DEPENDS),RDEPENDS))\n" | awk '!a[$$0]++'))
 		$(eval export $(subst -,_,$(notdir $($*.gz_PATH)))_pydebs=$(shell printf "$(subst $(SPACE),\n,$(call expand,$($*.gz_PYTHON_DEBS)))\n" | awk '!a[$$0]++'))
