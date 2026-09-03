@@ -8,104 +8,104 @@
 # the repo. Unless a later match takes precedence,
 # @lguohan will be requested for review when someone opens
 # a pull request.
-*       @lguohan
+*       @lguohan @svc-soniccodereview
 
-/device/        @sujinmkang @prgeor @vdahiya12
+/device/        @sujinmkang @prgeor @vdahiya12 @svc-soniccodereview
 
 # build
-/rules/         @qiluo-msft @xumia @lguohan
-/Makefile       @qiluo-msft @xumia @lguohan
-/Makefile.cache @qiluo-msft @xumia @lguohan
-/Makefile.work  @qiluo-msft @xumia @lguohan
-/slave.mk       @qiluo-msft @xumia @lguohan
-/scripts        @qiluo-msft @xumia @lguohan
-/src/sonic-build-hooks/                 @sonic-net/sonic-build
-/src/debootstrap/                       @sonic-net/sonic-build
-/src/sonic-fips/                        @sonic-net/sonic-build
+/rules/         @qiluo-msft @xumia @lguohan @svc-soniccodereview
+/Makefile       @qiluo-msft @xumia @lguohan @svc-soniccodereview
+/Makefile.cache @qiluo-msft @xumia @lguohan @svc-soniccodereview
+/Makefile.work  @qiluo-msft @xumia @lguohan @svc-soniccodereview
+/slave.mk       @qiluo-msft @xumia @lguohan @svc-soniccodereview
+/scripts        @qiluo-msft @xumia @lguohan @svc-soniccodereview
+/src/sonic-build-hooks/                 @sonic-net/sonic-build @svc-soniccodereview
+/src/debootstrap/                       @sonic-net/sonic-build @svc-soniccodereview
+/src/sonic-fips/                        @sonic-net/sonic-build @svc-soniccodereview
 
 # installer
-/installer/     @qiluo-msft
+/installer/     @qiluo-msft @svc-soniccodereview
 
 # permission
-/files/image_config/sudoers/  @qiluo-msft
+/files/image_config/sudoers/  @qiluo-msft @svc-soniccodereview
 
 # dockers
-/dockers/docker-base*/                  @qiluo-msft
-/dockers/docker-config-engine*/         @qiluo-msft
-/dockers/docker-snmp/                   @qiluo-msft
+/dockers/docker-base*/                  @qiluo-msft @svc-soniccodereview
+/dockers/docker-config-engine*/         @qiluo-msft @svc-soniccodereview
+/dockers/docker-snmp/                   @qiluo-msft @svc-soniccodereview
 
 # kernel
-/src/sonic-linux-kernel/                @sonic-net/sonic-kernel
+/src/sonic-linux-kernel/                @sonic-net/sonic-kernel @svc-soniccodereview
 
 # devices
-/device/                                @sonic-net/sonic-platform
-/src/sonic-platform-common/             @sonic-net/sonic-platform
-/src/sonic-platform-daemons/            @sonic-net/sonic-platform
-/src/sonic-platform-pde/                @sonic-net/sonic-platform
-/src/lm-sensors/                        @sonic-net/sonic-platform
-/src/flashrom/                          @sonic-net/sonic-platform
+/device/                                @sonic-net/sonic-platform @svc-soniccodereview
+/src/sonic-platform-common/             @sonic-net/sonic-platform @svc-soniccodereview
+/src/sonic-platform-daemons/            @sonic-net/sonic-platform @svc-soniccodereview
+/src/sonic-platform-pde/                @sonic-net/sonic-platform @svc-soniccodereview
+/src/lm-sensors/                        @sonic-net/sonic-platform @svc-soniccodereview
+/src/flashrom/                          @sonic-net/sonic-platform @svc-soniccodereview
 
 # common library
-/src/initramfs-tools/                   @qiluo-msft
-/src/redis-dump-load/                   @sonic-net/sonic-management
-/src/sonic-py-common/                   @sonic-net/sonic-management
-/src/sonic-py-swsssdk/                  @sonic-net/sonic-management
-/src/sonic-swss-common/                 @sonic-net/sonic-management
-/src/bash/                              @sonic-net/sonic-management
-/src/tacacs/                            @sonic-net/sonic-management
-/src/radius/                            @sonic-net/sonic-management
-/src/swig/                              @sonic-net/sonic-management
-/src/socat/                             @sonic-net/sonic-management
+/src/initramfs-tools/                   @qiluo-msft @svc-soniccodereview
+/src/redis-dump-load/                   @sonic-net/sonic-management @svc-soniccodereview
+/src/sonic-py-common/                   @sonic-net/sonic-management @svc-soniccodereview
+/src/sonic-py-swsssdk/                  @sonic-net/sonic-management @svc-soniccodereview
+/src/sonic-swss-common/                 @sonic-net/sonic-management @svc-soniccodereview
+/src/bash/                              @sonic-net/sonic-management @svc-soniccodereview
+/src/tacacs/                            @sonic-net/sonic-management @svc-soniccodereview
+/src/radius/                            @sonic-net/sonic-management @svc-soniccodereview
+/src/swig/                              @sonic-net/sonic-management @svc-soniccodereview
+/src/socat/                             @sonic-net/sonic-management @svc-soniccodereview
 
 # redis
-/src/redis/                             @sonic-net/sonic-management
-/src/hiredis/                           @sonic-net/sonic-management
+/src/redis/                             @sonic-net/sonic-management @svc-soniccodereview
+/src/hiredis/                           @sonic-net/sonic-management @svc-soniccodereview
 
 # yang
-/src/sonic-yang-models/                 @praveen-li @dgsudharsan @rathnasabapathyv @venkatmahalingam @qiluo-msft
-/src/sonic-yang-mgmt/                   @sonet-net/sonic-management
-/src/libyang/                           @sonic-net/sonic-management
-/src/libyang1/                          @sonic-net/sonic-management
-/src/libyang2/                          @sonic-net/sonic-management
+/src/sonic-yang-models/                 @praveen-li @dgsudharsan @rathnasabapathyv @venkatmahalingam @qiluo-msft @svc-soniccodereview
+/src/sonic-yang-mgmt/                   @sonet-net/sonic-management @svc-soniccodereview
+/src/libyang/                           @sonic-net/sonic-management @svc-soniccodereview
+/src/libyang1/                          @sonic-net/sonic-management @svc-soniccodereview
+/src/libyang2/                          @sonic-net/sonic-management @svc-soniccodereview
 
 # bgpcfgd
-/src/sonic-bgpcfgd/                     @StormLiangMS
+/src/sonic-bgpcfgd/                     @StormLiangMS @svc-soniccodereview
 
 # sonic-config-engine
-/src/sonic-config-engine/               @sonic-net/sonic-management
+/src/sonic-config-engine/               @sonic-net/sonic-management @svc-soniccodereview
 
 # sonic-utilities
-/src/sonic-utilities/                   @sonic-net/sonic-management
+/src/sonic-utilities/                   @sonic-net/sonic-management @svc-soniccodereview
 
 # sonic-telemetry
-/dockers/docker-sonic-telemetry         @sonic-net/sonic-management
-/src/sonic-telemetry/                   @sonic-net/sonic-management
+/dockers/docker-sonic-telemetry         @sonic-net/sonic-management @svc-soniccodereview
+/src/sonic-telemetry/                   @sonic-net/sonic-management @svc-soniccodereview
 
 # snmp
-/src/sonic-snmpagent/                   @sonic-net/sonic-management
-/src/snmpd/                             @sonic-net/sonic-management
+/src/sonic-snmpagent/                   @sonic-net/sonic-management @svc-soniccodereview
+/src/snmpd/                             @sonic-net/sonic-management @svc-soniccodereview
 
 # dhcp relay
-/src/dhcp6relay/                        @sonic-net/sonic-fundamentals
-/src/dhcpmon/                           @sonic-net/sonic-fundamentals
-/src/isc-dhcp/                          @sonic-net/sonic-fundamentals
+/src/dhcp6relay/                        @sonic-net/sonic-fundamentals @svc-soniccodereview
+/src/dhcpmon/                           @sonic-net/sonic-fundamentals @svc-soniccodereview
+/src/isc-dhcp/                          @sonic-net/sonic-fundamentals @svc-soniccodereview
 
 # sflow
-/src/sflow/                             @sonic-net/sonic-dataplane
+/src/sflow/                             @sonic-net/sonic-dataplane @svc-soniccodereview
 
 # sonic restapi
-/src/sonic-restapi/                     @sonic-net/sonic-dataplane
+/src/sonic-restapi/                     @sonic-net/sonic-dataplane @svc-soniccodereview
 
 # sonic swss
-/src/sonic-swss/                        @sonic-net/sonic-dataplane
+/src/sonic-swss/                        @sonic-net/sonic-dataplane @svc-soniccodereview
 
 # linux networking, e.g., libnl3, iproute2, ifupdown2, ethtool
-/src/libnl3/                            @sonic-net/sonic-dataplane
-/src/iproute2/                          @sonic-net/sonic-dataplane
-/src/ifupdown2/                         @sonic-net/sonic-dataplane
-/src/ethtool/                           @sonic-net/sonic-dataplane
+/src/libnl3/                            @sonic-net/sonic-dataplane @svc-soniccodereview
+/src/iproute2/                          @sonic-net/sonic-dataplane @svc-soniccodereview
+/src/ifupdown2/                         @sonic-net/sonic-dataplane @svc-soniccodereview
+/src/ethtool/                           @sonic-net/sonic-dataplane @svc-soniccodereview
 
 # ptf
-/src/ptf/                               @sonic-net/sonic-fundamentals
-/src/ptf-py3/                           @sonic-net/sonic-fundamentals
-/src/scapy/                             @sonic-net/sonic-fundamentals
+/src/ptf/                               @sonic-net/sonic-fundamentals @svc-soniccodereview
+/src/ptf-py3/                           @sonic-net/sonic-fundamentals @svc-soniccodereview
+/src/scapy/                             @sonic-net/sonic-fundamentals @svc-soniccodereview
